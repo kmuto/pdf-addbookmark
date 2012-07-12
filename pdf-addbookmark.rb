@@ -152,12 +152,12 @@ def main
 
   parser = OptionParser.new
   parser.banner = "Usage: #{File.basename($0)} < toc.txt"
-  parser.on('-f', '--forewordpages NUMBER', 'Specify foreword offset count (number).') {|n| forewordpages = n.to_i }
-  parser.on('-s', '--splitter STRING', 'Specify alternative character for tab in titles.') {|s| splitter = s }
-  parser.on('-l', '--hidelevel NUMBER', 'Specify header level should be folded by default. (default=2)') {|l| hidelevel = l.to_i }
-  parser.on('-g', '--gs STRING', 'Specify Ghostscript caller with parameters.') {|g| gs = g }
-  parser.on('-i', '--input PDFFILE', 'Specify input PDF filename (only works with -o option.)') {|o| inpdf = o }
-  parser.on('-o', '--output PDFFILE', 'Specify output PDF filename (only works with -i option.)') {|o| outpdf = o }
+  parser.on('-f', '--forewordpages=NUMBER', 'Specify foreword offset count (number).') {|n| forewordpages = n.to_i }
+  parser.on('-s', '--splitter=STRING', 'Specify alternative character for tab in titles.') {|s| splitter = s }
+  parser.on('-l', '--hidelevel=NUMBER', 'Specify header level should be folded by default. (default=2)') {|l| hidelevel = l.to_i }
+  parser.on('-g', '--gs=STRING', 'Specify Ghostscript caller with parameters.') {|g| gs = g }
+  parser.on('-i', '--input=PDFFILE', 'Specify input PDF filename (only works with -o option.)') {|o| inpdf = o }
+  parser.on('-o', '--output=PDFFILE', 'Specify output PDF filename (only works with -i option.)') {|o| outpdf = o }
   parser.on('-h', '--help', 'Print this messages.') do
     puts parser.help
     exit 0
