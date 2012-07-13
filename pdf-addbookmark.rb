@@ -48,8 +48,10 @@ end
 def build_mark(title, page_in_pdf, count)
   # FIXME: Python版ではtitleの0x3000→' 'の変換あり。理由は?
   if !count.nil? && count != 0
+    STDERR.puts "#{title}...#{page_in_pdf}: Count #{count}" unless @debug.nil?
     "[/Title (#{conv_to_oct(title)}) /Count #{count} /Page #{page_in_pdf} /OUT pdfmark"
   else
+    STDERR.puts "#{title}...#{page_in_pdf}" unless @debug.nil?
     "[/Title (#{conv_to_oct(title)}) /Page #{page_in_pdf} /OUT pdfmark"
   end
 end
@@ -140,13 +142,14 @@ def roman2arabic(roman, forewordpages)
 end
 
 def main
+  @debug = nil
   forewordpages = 0
   splitter = "　"
   hidelevel = 2 # hide subsection and smaller headers by default
   inpdf = nil
   outpdf = nil
   bookmarkoutput = nil
-  gs = "gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=<<%outpdf%>> <<%bookmark%>> <<%inpdf%>>"
+  gs = "gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=<<%outpdf%>> <<%bookmark%>> <<%inpdf%>>" # add '-q' to be quiet
 
   marklist = []
 
@@ -158,6 +161,7 @@ def main
   parser.on('-g', '--gs=STRING', 'Specify Ghostscript caller with parameters.') {|g| gs = g }
   parser.on('-i', '--input=PDFFILE', 'Specify input PDF filename (only works with -o option.)') {|o| inpdf = o }
   parser.on('-o', '--output=PDFFILE', 'Specify output PDF filename (only works with -i option.)') {|o| outpdf = o }
+  parser.on('-d', '--debug', 'Debug flag.') { @debug = true }
   parser.on('-h', '--help', 'Print this messages.') do
     puts parser.help
     exit 0
@@ -182,6 +186,8 @@ def main
   end
 
   ARGF.each_line do |l|
+    bom = Regexp.new('\357\273\277') # remove BOM
+    l.sub!(bom, '')
     if l =~ /\A\#/ # comment
       forewordpages = $1.to_i if l =~ /\A\#\s*FOREWORDPAGES:\s*(\d+)/
       splitter = $1 if l.chomp =~ /\A\#\s*SPLITTER:(.+)/
@@ -211,7 +217,7 @@ def main
   marklist.each_with_index do |mark, i|
     count = 0
     (i + 1).upto(marklist.size - 1) do |j|
-      count += 1 if marklist[j]['level'] > mark['level']
+      count += 1 if marklist[j]['level'] == mark['level'] + 1
       break if marklist[j]['level'] <= mark['level']
     end
     count = -count if hidelevel <= mark['level']
@@ -225,6 +231,7 @@ def main
 
   unless bookmarkio.nil?
     bookmarkio.close
+    STDERR.puts "call: #{gs}" unless @debug.nil?
     fork {
       exec(gs)
     }
