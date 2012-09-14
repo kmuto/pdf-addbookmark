@@ -185,7 +185,9 @@ def main
     gs = gs.gsub('<<%outpdf%>>', outpdf).gsub('<<%bookmark%>>', bookmarkoutput).gsub('<<%inpdf%>>', inpdf)
   end
 
+  lno = 0
   ARGF.each_line do |l|
+    lno += 1
     bom = Regexp.new('\357\273\277') # remove BOM
     l.sub!(bom, '')
     if l =~ /\A\#/ # comment
@@ -194,13 +196,19 @@ def main
       hidelevel = $1.to_i if l.chomp =~ /\A\#s\*HIDELEVEL:\s*(\d+)/
       next
     end
+    next if l.chomp.empty?
     level = 0
     l.sub!(/\A\t+/) do |m|
       level = m.length
       ''
     end
     strs = l.chomp.split(/\t/)
-    page = roman2arabic(strs.pop, forewordpages)
+    begin
+      page = roman2arabic(strs.pop, forewordpages)
+    rescue
+      puts "#{lno}:ページ情報不足 #{l}"
+      exit(1)
+    end
     title = strs.join(splitter)
 
     marklist.push({ 'title' => title,
