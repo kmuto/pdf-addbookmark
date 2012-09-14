@@ -57,6 +57,7 @@ def build_mark(title, page_in_pdf, count)
 end
 
 def roman2arabic(roman, forewordpages)
+  roman = roman.gsub("０", "0").gsub("１", "1").gsub("２", "2").gsub("３", "3").gsub("４", "4").gsub("５", "5").gsub("６", "6").gsub("７", "7").gsub("８", "8").gsub("９", "9")
   return roman.to_i if roman =~ /\A\d+\Z/
 
   i = 0
@@ -186,6 +187,9 @@ def main
   end
 
   lno = 0
+  err = nil
+  prelevel = 0
+
   ARGF.each_line do |l|
     lno += 1
     bom = Regexp.new('\357\273\277') # remove BOM
@@ -206,8 +210,8 @@ def main
     begin
       page = roman2arabic(strs.pop, forewordpages)
     rescue
-      puts "#{lno}:ページ情報不足 #{l}"
-      exit(1)
+      puts "#{lno}行:ページが記入されていないか不正です: #{l}"
+      err = true
     end
     title = strs.join(splitter)
 
@@ -215,6 +219,17 @@ def main
                     'page' => page,
                     'level' => level
                   })
+
+    if prelevel < level - 1
+      puts "#{lno}行:先頭タブの数がおかしいようです(前は#{prelevel}、この行は#{level}): #{l}"
+      err = true
+    end
+    prelevel = level
+  end
+
+  if !err.nil?
+    puts "エラーを修正してください。"
+    exit(1)
   end
 
   bookmarkio = nil
