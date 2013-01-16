@@ -4,7 +4,7 @@
 # Kenshi Muto <kmuto@debian.org>
 #
 # License:
-# Copyright 2012 Kenshi Muto.
+# Copyright 2012-2013 Kenshi Muto.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,6 +33,7 @@
 ## https://gist.github.com/3096577
 
 require 'optparse'
+require 'nkf'
 
 def conv_to_oct(source)
   buf = ""
@@ -188,43 +189,44 @@ def main
 
   lno = 0
   err = nil
-  prelevel = 0
+  prelevel = -1
 
-  ARGF.each_line do |l|
-    lno += 1
-    bom = Regexp.new('\357\273\277') # remove BOM
-    l.sub!(bom, '')
-    if l =~ /\A\#/ # comment
-      forewordpages = $1.to_i if l =~ /\A\#\s*FOREWORDPAGES:\s*(\d+)/
-      splitter = $1 if l.chomp =~ /\A\#\s*SPLITTER:(.+)/
-      hidelevel = $1.to_i if l.chomp =~ /\A\#s\*HIDELEVEL:\s*(\d+)/
-      next
+  ARGF.each_line do |_l|
+    NKF.nkf("-w -d", _l).split("\n").each do |l|
+      lno += 1
+      bom = Regexp.new('\357\273\277') # remove BOM
+      l.sub!(bom, '')
+      if l =~ /\A\#/ # comment
+        forewordpages = $1.to_i if l =~ /\A\#\s*FOREWORDPAGES:\s*(\d+)/
+        splitter = $1 if l.chomp =~ /\A\#\s*SPLITTER:(.+)/
+        hidelevel = $1.to_i if l.chomp =~ /\A\#s\*HIDELEVEL:\s*(\d+)/
+        next
+      end
+      next if l.chomp.empty?
+      level = 0
+      l.sub!(/\A\t+/) do |m|
+        level = m.length
+        ''
+      end
+      strs = l.chomp.split(/\t/)
+      begin
+        page = roman2arabic(strs.pop, forewordpages)
+      rescue
+        puts "#{lno}行:ページが記入されていないか不正です: #{l}"
+        err = true
+      end
+      title = strs.join(splitter)
+      
+      marklist.push({ 'title' => title,
+                      'page' => page,
+                      'level' => level
+                    })
+      if prelevel < level - 1
+        puts "#{lno}行:先頭タブの数が前の行より2つ以上多いです。(前行は#{prelevel}個、この行は#{level}個): #{title}"
+        err = true
+      end
+      prelevel = level
     end
-    next if l.chomp.empty?
-    level = 0
-    l.sub!(/\A\t+/) do |m|
-      level = m.length
-      ''
-    end
-    strs = l.chomp.split(/\t/)
-    begin
-      page = roman2arabic(strs.pop, forewordpages)
-    rescue
-      puts "#{lno}行:ページが記入されていないか不正です: #{l}"
-      err = true
-    end
-    title = strs.join(splitter)
-
-    marklist.push({ 'title' => title,
-                    'page' => page,
-                    'level' => level
-                  })
-
-    if prelevel < level - 1
-      puts "#{lno}行:先頭タブの数がおかしいようです(前は#{prelevel}、この行は#{level}): #{l}"
-      err = true
-    end
-    prelevel = level
   end
 
   if !err.nil?
