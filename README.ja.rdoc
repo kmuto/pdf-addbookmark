@@ -1,4 +1,4 @@
-= PDFに外部目次ファイルからしおり(ブックマーク)を埋め込むツール
+= PDFに外部目次ファイルからしおり(ブックマーク)を埋め込むツール (Javaバージョン)
 
 Copyright 2012-2013 Kenshi Muto <kmuto@debian.org>
 
@@ -10,19 +10,36 @@ Copyright 2012-2013 Kenshi Muto <kmuto@debian.org>
 しおり情報をPDFに一度に埋め込むためのものです。
 
 == 必要なソフトウェア
-* Ruby 1.9以上 (内部で使用している命令上、1.8では動作しません)
-* Ghostscript (埋め込み生成まで行う場合。このツールではforkを利用して起動するため、Windowsでは動作しません)
+* Java / OpenJDK: http://openjdk.java.net/
+* iText Library: http://itextpdf.com/
 
 Debian GNU/Linux 7.0 Wheezyで動作確認をしています。
+apt-get install openjdk-6-jdk libitext-java でパッケージをインストールします。
+
+== コンパイル
+次のようにコンパイルします。
+
+  javac -classpath /usr/share/java/itext.jar JpdfAddBookmark.java
+
+コンパイラが「com.lowagie.text.* が見つからない」旨のエラーを返した場合は、
+JpdfAddBookmark.javaの宣言行を次のように変更してください。
+
+  import com.itextpdf.text.DocumentException;
+  import com.itextpdf.text.pdf.*;
+
+コンパイルされたクラスファイル JpdfAddBookmark.class と ErrMsgException.class
+を適当なディレクトリにコピーしてください。
+
+そして、jpdfaddbookmark.sh の JPDFPATH=. となっている箇所をそのディレクトリ
+に変更してください。
+
+  例: JPDFPATH=/usr/local/jpdfaddbookmark
+
+jpdfaddbookmark.shをパスの通ったところにコピーしてください。
 
 == 使い方
-しおり用の目次ファイルを作成し、pdf-addbookmark.rbに渡すと、しおりの
-PostScriptファイルが標準出力に出力されます。GhostscriptまたはAdobe
-Distillerを使って目的のPDFに合体させれば、しおりが埋め込まれます。
-
-pdf-addbookmark.rbの-iオプションと-oオプションを使い、入出力PDFも指定す
-ると、Ghostscriptの利用できる環境であれば、PDFの出力まで一括して行えま
-す。
+しおり用の目次ファイルを作成し、jpdfaddbookmark.sh にPDFファイルと共に
+指定して、しおり埋め込みの新しいPDFを作成します。
 
 埋め込み対象のPDFは、大扉から白ページまですべて込みの完全な状態であるこ
 とを想定しています。
@@ -30,23 +47,22 @@ pdf-addbookmark.rbの-iオプションと-oオプションを使い、入出力P
 書籍によっては、大扉ノンブルをアラビア数字の1とするいわゆる「通しページ」
 ではなく、1章が始まるまではローマ数字1(i)で始めて1章からアラビア数字の
 1とするものもあります。この場合、アラビア数字1が始まるまで(いわゆる前
-付)のページ総数を、-fオプションで指定します。
+付)のページ総数を、オプションで指定します。
 
-  $ pdf-addbookmark.rb -f 28 toc.txt
-  [/Title (\376\377\212\63\200\5\60\176\60\110\60\114\60\115) /Page 5 /OUT pdfmark
-  [/Title (\376\377\60\157\60\130\60\201\60\153) /Page 7 /OUT pdfmark
-  [/Title (\376\377\0\61\172\340\60\0\0\120\0\145\0\162\0\154\121\145\225\200) /Count 12 /Page 1 /OUT pdfmark
-  [/Title (\376\377\0\61\0\56\0\61\60\0\214\352\165\221\137\334\173\124) /Count 5 /Page 1 /OUT pdfmark
-  …
+    jpdfaddbookmark.sh  元PDFファイル  新PDFファイル しおり目次ファイル 前付ページ数  デフォルトで畳む数
 
-  $ pdf-addbookmark.rb -f 28 -i lrn-perl6.pdf -o lrn-perl6-with-bookmark.pdf toc.txt
-  (lrn-perl6-with-bookmark.pdfが作成される)
+* デフォルトで畳む数 は、ここで指定した数以上の階層のものについて畳んだ状態のしおりになります。
+* 前付ページ数、デフォルトで畳む数 はオプションです。通しページで、かつデフォルトで畳む数を指定したいときには、前付ページ数 に「0」を指定してください。
+
+==== 例
+* jpdfaddbookmark.sh in.pdf out.pdf bookmark.txt ←大扉1から始まる通しページのPDF in.pdfにbookmark.txtのしおりを埋め込んで、out.pdfとして書き出す
+* jpdfaddbookmark.sh in_with_mae.pdf out.pdf bookmark.txt 22 ←前付ページ総数は22ページ分(i〜xxii)のin_with_mae.pdfに、bookmark.txtのしおりを埋め込んで、out.pdfとして書き出す
 
 === しおり用の目次ファイル
 * 内部での自動変換は行いますが、文字化け等を防ぐため、UTF-8エンコーディング、UNIX改行形式(LF)で記述することを推奨します。
 * 先頭のタブの数で見出しの深さを指定します。この深さに基づいて、しおりの階層構造ができあがります。(なお、前の行よりも2つ以上タブが多いと階層構造を作れないのでエラーを報告し、中止します。)
 * 見出しとノンブルは、タブで区切ります。(ノンブルの前のタブは複数あっても1つとして扱われます。)
-* #から始まる行はコメントです。オプションで指定するようないくつかの命令を事前構成することもできます(オプションよりもこちらが優先されます)。(FOREWORDPAGES:前付ページ、SPLITTER:区切り文字、HIDELEVEL:最初は閉じておくレベル)
+* #から始まる行はコメントです。
 * 空行は単に無視されます。
 
 例を次に示します。
@@ -70,18 +86,3 @@ pdf-addbookmark.rbの-iオプションと-oオプションを使い、入出力P
   		1.2.5　いまPerlに何が起こっているのでしょうか?	9
   2章　スカラーデータ	25
   	2.1　数値	25
-
-== オプション
-pdf-addbookmark.rbには、いくつかのオプションを指定できます。
-
-* -h または --help: ヘルプを表示します。
-* -f <オフセット数> または --forewordpages=<オフセット数>: 大扉からの通しページではない(ローマ数字の前付がある)場合に、アラビア数字のノンブル1ページが始まるまでの前付ページ総数を指定します。ローマ数字の前付がある場合には、これを指定しないとしおりの飛び先が狂ってしまいます。デフォルトは0です。
-* -s '<区切り文字>' または --splitter='<区切り文字>': 目次の見出しにタブが含まれている場合は、指定の区切り文字に変換します。デフォルトでは全角スペースです。
-* -l <見出しレベル> または --hidelevel=<見出しレベル>: この階層よりも深い見出しについては、最初は閉じた状態のしおりとします。デフォルトは2です。
-* -g '<Ghostscript起動設定>' または --gs='<Ghostscript起動設定>': -i/-oオプションが指定されていてGhostscriptを起動する必要がある場合、その呼び出しパラメータを設定します。デフォルトは「gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=<<%outpdf%>> <<%bookmark%>> <<%inpdf%>>」です。<<>>内のパラメータは呼び出し前に妥当なものに置換されます。
-* -i <埋め込み元PDF> または --input=<埋め込み元PDF>: しおりを埋め込む元となるPDFです。-oオプションと共に使います。
-* -o <出力PDF> または --output=<出力PDF>: しおりを埋め込んだPDFです。-iオプションと共に使います。既存のファイルがあっても確認せずに上書きするので注意してください。
-
-== 謝辞
-本ツール作成にあたっては、@turky (Akihiro Takizawa)さんからベースとなる
-Pythonコードのほか、多数の有益な情報をいただきました。ここに感謝いたします。

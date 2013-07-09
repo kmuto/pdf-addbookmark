@@ -119,12 +119,12 @@ public class JpdfAddBookmark {
     public static void usage() {
 	// 使い方
 	System.out.println("JpdfAddBookmark (c)2013 Kenshi Muto");
-	System.out.println("java -classpath /usr/share/java/itext.jar:. JpdfAddBookmark InPDF_filename OutPDF_filename bookmark_filename [preample_offset#]");
+	System.out.println("java -classpath /usr/share/java/itext.jar:. JpdfAddBookmark InPDF_filename OutPDF_filename bookmark_filename [preample_offset# [foldlevel]]");
     }
 
     public static void main(String args[]) {
 	// メインルーチン
-	if (args.length != 3 && args.length != 4) {
+	if (args.length < 3 || args.length > 5) {
 	    usage();
 	    return;
 	}
@@ -173,12 +173,16 @@ public class JpdfAddBookmark {
 		}
 		int page = roman2arabic(lines[lines.length - 1], preample);
 
-		// System.out.println(level + " " + line + "\t" + page);
-
 		HashMap<String, Object> map = new HashMap<String, Object>();
 		map.put("Title", line);
 		map.put("Action", "GoTo");
 		map.put("Page", page + " Fit");
+
+		if (args.length == 5) {
+		    // ブックマークを閉じるか
+		    int foldlevel = Integer.parseInt(args[4]);
+		    if (foldlevel <= level) map.put("Open", "false");
+		}
 
 		if (level > previouslevel) {
 		    if (level - previouslevel > 1) {
