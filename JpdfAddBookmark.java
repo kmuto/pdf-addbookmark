@@ -118,7 +118,7 @@ public class JpdfAddBookmark {
 
     public static void usage() {
 	// 使い方
-	System.out.println("JpdfAddBookmark (c)2013 Kenshi Muto");
+	System.out.println("JpdfAddBookmark (c)2013-2014 Kenshi Muto");
 	System.out.println("java -classpath /usr/share/java/itext.jar:. JpdfAddBookmark InPDF_filename OutPDF_filename bookmark_filename [preample_offset# [foldlevel]]");
     }
 
@@ -166,6 +166,7 @@ public class JpdfAddBookmark {
 		} else {
 		    line = lines[0];
 		}
+		if (lines.length < 2) continue;
 
 		int preample = 0;
 		if (args.length == 4) {
