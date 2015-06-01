@@ -169,8 +169,9 @@ public class JpdfAddBookmark {
 		if (lines.length < 2) continue;
 
 		int preample = 0;
-		if (args.length == 4) {
+		if (args.length >= 4) {
 		    preample = Integer.parseInt(args[3]);
+System.out.println("YES" + preample);
 		}
 		int page = roman2arabic(lines[lines.length - 1], preample);
 
@@ -179,7 +180,7 @@ public class JpdfAddBookmark {
 		map.put("Action", "GoTo");
 		map.put("Page", page + " Fit");
 
-		if (args.length == 5) {
+		if (args.length >= 5) {
 		    // ブックマークを閉じるか
 		    int foldlevel = Integer.parseInt(args[4]);
 		    if (foldlevel <= level) map.put("Open", "false");
