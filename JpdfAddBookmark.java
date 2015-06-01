@@ -171,7 +171,6 @@ public class JpdfAddBookmark {
 		int preample = 0;
 		if (args.length >= 4) {
 		    preample = Integer.parseInt(args[3]);
-System.out.println("YES" + preample);
 		}
 		int page = roman2arabic(lines[lines.length - 1], preample);
 
