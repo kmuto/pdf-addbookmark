@@ -4,7 +4,7 @@
   Kenshi Muto <kmuto@debian.org>
 
   License:
-  Copyright 2013 Kenshi Muto.
+  Copyright 2013-2018 Kenshi Muto.
   
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
@@ -234,15 +234,19 @@ public class JpdfAddBookmark {
 	    
 	    copyFields.setOutlines(bookmark);
 
+	    PdfPageLabels labels = new PdfPageLabels();
 	    if (args.length > 3) { // 前付
-		PdfPageLabels labels = new PdfPageLabels();
 		if (maxpage > 0)
-		    labels.addPageLabel(1, PdfPageLabels.LOWERCASE_ROMAN_NUMERALS, null, 1);
+		    labels.addPageLabel(2, PdfPageLabels.LOWERCASE_ROMAN_NUMERALS, null, 2);
 		if (maxpage > Integer.parseInt(args[3]))
 		    labels.addPageLabel(Integer.parseInt(args[3]) + 1, PdfPageLabels.DECIMAL_ARABIC_NUMERALS, null, 1);
-		
-		copyFields.getWriter().setPageLabels(labels);
+	    } else {
+		    labels.addPageLabel(2, PdfPageLabels.DECIMAL_ARABIC_NUMERALS, null, 2);
 	    }
+
+	    // 最初のページは「cover」とする
+	    labels.addPageLabel(1, PdfPageLabels.EMPTY, "cover", 1);
+	    copyFields.getWriter().setPageLabels(labels);
 
 	    copyFields.close();
 	    os.close();
